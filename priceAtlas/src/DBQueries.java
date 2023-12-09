@@ -3,9 +3,11 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Scanner;
 import java.sql.ResultSet;
-import java.io.*;
+import java.sql.ResultSetMetaData;
 
 /**
  * The DBQueries class is a Java class that handles various database queries and
@@ -17,6 +19,7 @@ import java.io.*;
  */
 public class DBQueries {
     private Connection connection;
+    private CLI cli;
 
     // The above code is a constructor for a class called DBQueries. It takes a
     // Scanner object as a
@@ -45,6 +48,7 @@ public class DBQueries {
         } while (true);
 
         System.out.println("\nConnection to Database Successful!");
+        cli = new CLI();
     }
 
     /**
@@ -76,24 +80,30 @@ public class DBQueries {
      */
     public void getAllGames() throws SQLException {
         try {
-            String txtFmt = "%-10s %-20s %-20s %-20s\n";
-            Statement statement = connection.createStatement();
+            Statement statement = connection.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE,
+                    ResultSet.CONCUR_READ_ONLY);
             ResultSet resultSet = statement.executeQuery("SELECT * FROM game");
-            System.out
-                    .println("+--------------------------------------------------------------------------+");
-            System.out.printf(txtFmt, "Game ID", "Title", "Release Date", "Developer");
-            System.out
-                    .println("+--------------------------------------------------------------------------+");
+
+            ResultSetMetaData metaData = resultSet.getMetaData();
+            int columnCount = metaData.getColumnCount();
+            int[] columnWidths = new int[columnCount];
+
+            for (int i = 1; i <= columnCount; i++) {
+                columnWidths[i - 1] = metaData.getColumnName(i).length();
+            }
 
             while (resultSet.next()) {
-                System.out.printf(txtFmt,
-                        resultSet.getInt("GameID"),
-                        resultSet.getString("Title"),
-                        resultSet.getString("ReleaseDate"),
-                        resultSet.getString("Developer"));
+                for (int i = 1; i <= columnCount; i++) {
+                    int dataLength = resultSet.getString(i).length();
+                    if (dataLength > columnWidths[i - 1]) {
+                        columnWidths[i - 1] = dataLength;
+                    }
+                }
             }
-            System.out
-                    .println("+--------------------------------------------------------------------------+\n");
+
+            cli.printTableHeader(metaData, columnWidths, null);
+            resultSet.beforeFirst();
+            cli.printTableData(resultSet, columnCount, columnWidths, null);
 
             resultSet.close();
         } catch (Exception e) {
@@ -103,8 +113,7 @@ public class DBQueries {
 
     /**
      * The function retrieves all game items associated with a specific game ID from
-     * a database and
-     * prints them in a formatted table.
+     * a database and prints them in a formatted table.
      * 
      * @param gameId The `gameId` parameter is an integer that represents the ID of
      *               the game for which
@@ -113,25 +122,99 @@ public class DBQueries {
     public void getAllGameItems(int gameId) {
         try {
             String query = "SELECT * FROM ITEM WHERE ITEM.RefGameID = ?";
-            PreparedStatement preparedStatement = connection.prepareStatement(query);
+            PreparedStatement preparedStatement = connection.prepareStatement(query, ResultSet.TYPE_SCROLL_SENSITIVE,
+                    ResultSet.CONCUR_READ_ONLY);
             preparedStatement.setInt(1, gameId);
 
             ResultSet resultSet = preparedStatement.executeQuery();
 
-            System.out.println(
-                    "\n+--------------------------------------------+");
-            System.out.printf("| %-10s %-31s |\n", "Item ID", "Item Name");
-            System.out.println(
-                    "+--------------------------------------------+");
+            ResultSetMetaData metaData = resultSet.getMetaData();
+            int columnCount = metaData.getColumnCount();
+            int[] columnWidths = new int[columnCount];
 
-            while (resultSet.next()) {
-                System.out.printf("|  %-10d %-30s |\n",
-                        resultSet.getInt("ItemID"),
-                        resultSet.getString("ItemName"));
+            for (int i = 1; i <= columnCount; i++) {
+                columnWidths[i - 1] = metaData.getColumnName(i).length();
             }
 
-            System.out.println(
-                    "+--------------------------------------------+");
+            while (resultSet.next()) {
+                for (int i = 1; i <= columnCount; i++) {
+                    int dataLength = resultSet.getString(i).length();
+                    if (dataLength > columnWidths[i - 1]) {
+                        columnWidths[i - 1] = dataLength;
+                    }
+                }
+            }
+
+            cli.printTableHeader(metaData, columnWidths, null);
+            resultSet.beforeFirst();
+            cli.printTableData(resultSet, columnCount, columnWidths, null);
+
+            resultSet.close();
+            preparedStatement.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * The specificItemCostLoc function retrieves and displays the cost and location
+     * information for a
+     * specific item in a game.
+     * 
+     * @param itemID The itemID parameter is used to specify the ID of the item you
+     *               want to retrieve
+     *               the cost for.
+     * @param gameID The gameID parameter is used to specify the ID of the game for
+     *               which you want to
+     *               retrieve the specific item cost and location.
+     */
+    public void specificItemCostLoc(int itemID, int gameID) {
+        try {
+            String query = "SELECT * " +
+                    "FROM ITEM " +
+                    "LEFT JOIN STATCONTAINER ON STATCONTAINER.RefItemID = ITEM.ItemID " +
+                    "LEFT JOIN PRICE ON PRICE.PriceContainerID = STATCONTAINER.ContainerID " +
+                    "WHERE ITEM.ItemID = ? AND ITEM.RefGameID = ?";
+            PreparedStatement preparedStatement = connection.prepareStatement(query, ResultSet.TYPE_SCROLL_SENSITIVE,
+                    ResultSet.CONCUR_READ_ONLY);
+            preparedStatement.setInt(1, itemID);
+            preparedStatement.setInt(2, gameID);
+
+            ResultSet resultSet = preparedStatement.executeQuery();
+            List<String> columnsToPrint = Arrays.asList("ItemID", "ItemName");
+            ResultSetMetaData metaData = resultSet.getMetaData();
+            int columnCount = metaData.getColumnCount();
+            int[] columnWidths = new int[columnsToPrint.size()];
+
+            // Specify the columns you want to print
+
+            // Initialize column widths with specified column names length
+            int counter = 0;
+            for (int i = 1; i <= columnCount; i++) {
+                String columnName = metaData.getColumnName(i);
+                if (columnsToPrint.contains(columnName)) {
+                    columnWidths[counter] = columnName.length();
+                    counter++;
+                }
+            }
+
+            counter = 0;
+            while (resultSet.next()) {
+                for (int i = 1; i <= columnCount; i++) {
+                    String columnName = metaData.getColumnName(i);
+                    if (columnsToPrint.contains(columnName)) {
+                        int dataLength = resultSet.getString(i).length();
+                        if (dataLength > columnWidths[counter]) {
+                            columnWidths[counter] = dataLength;
+                            counter++;
+                        }
+                    }
+                }
+            }
+
+            cli.printTableHeader(metaData, columnWidths, columnsToPrint);
+            resultSet.beforeFirst();
+            cli.printTableData(resultSet, columnCount, columnWidths, columnsToPrint);
 
             resultSet.close();
             preparedStatement.close();
@@ -161,33 +244,34 @@ public class DBQueries {
             String query = "SELECT DISTINCT * " +
                     "FROM ITEM, STATCONTAINER, STATS " +
                     "WHERE ITEM.ItemID = ? AND ITEM.RefGameID = ? AND STATS.RefContainerID = ? AND STATCONTAINER.RefItemID = ITEM.ItemID";
-            PreparedStatement preparedStatement = connection.prepareStatement(query);
+            PreparedStatement preparedStatement = connection.prepareStatement(query, ResultSet.TYPE_SCROLL_SENSITIVE,
+                    ResultSet.CONCUR_READ_ONLY);
             preparedStatement.setInt(1, itemID);
             preparedStatement.setInt(2, gameID);
             preparedStatement.setInt(3, instanceID);
 
             ResultSet resultSet = preparedStatement.executeQuery();
 
-            System.out.println(
-                    "\n+----------------------------------------------------------------------------------------------------------------+");
+            ResultSetMetaData metaData = resultSet.getMetaData();
+            int columnCount = metaData.getColumnCount();
+            int[] columnWidths = new int[columnCount];
 
-            System.out.printf("| %-10s %-10s %-10s %-10s %-40s %-14s %s |\n", "RefGameID", "Item ID", "Item Name",
-                    "Item Type", "Item Description", "Stat Name", "Stat Value");
-            System.out.println(
-                    "+----------------------------------------------------------------------------------------------------------------+");
+            for (int i = 1; i <= columnCount; i++) {
+                columnWidths[i - 1] = metaData.getColumnName(i).length();
+            }
 
             while (resultSet.next()) {
-                System.out.printf("| %-10d %-10d %-10s %-10s %-40s %-19s %.3f |\n",
-                        resultSet.getInt("RefGameID"),
-                        resultSet.getInt("ItemID"),
-                        resultSet.getString("ItemName"),
-                        resultSet.getString("ItemType"),
-                        resultSet.getString("ItemDescription"),
-                        resultSet.getString("StatName"),
-                        resultSet.getFloat("StatValue"));
+                for (int i = 1; i <= columnCount; i++) {
+                    int dataLength = resultSet.getString(i).length();
+                    if (dataLength > columnWidths[i - 1]) {
+                        columnWidths[i - 1] = dataLength;
+                    }
+                }
             }
-            System.out.println(
-                    "+----------------------------------------------------------------------------------------------------------------+");
+
+            cli.printTableHeader(metaData, columnWidths, null);
+            resultSet.beforeFirst();
+            cli.printTableData(resultSet, columnCount, columnWidths, null);
 
             resultSet.close();
             preparedStatement.close();
@@ -237,56 +321,6 @@ public class DBQueries {
             }
             System.out.println(
                     "+-----------------------------------------------------------------------------------------------------------------------+");
-
-            resultSet.close();
-            preparedStatement.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    /**
-     * The specificItemCostLoc function retrieves and displays the cost and location
-     * information for a
-     * specific item in a game.
-     * 
-     * @param itemID The itemID parameter is used to specify the ID of the item you
-     *               want to retrieve
-     *               the cost for.
-     * @param gameID The gameID parameter is used to specify the ID of the game for
-     *               which you want to
-     *               retrieve the specific item cost and location.
-     */
-    public void specificItemCostLoc(int itemID, int gameID) {
-        try {
-            String query = "SELECT * " +
-                    "FROM ITEM " +
-                    "LEFT JOIN STATCONTAINER ON STATCONTAINER.RefItemID = ITEM.ItemID " +
-                    "LEFT JOIN PRICE ON PRICE.PriceContainerID = STATCONTAINER.ContainerID " +
-                    "WHERE ITEM.ItemID = ? AND ITEM.RefGameID = ?";
-            PreparedStatement preparedStatement = connection.prepareStatement(query);
-            preparedStatement.setInt(1, itemID);
-            preparedStatement.setInt(2, gameID);
-
-            ResultSet resultSet = preparedStatement.executeQuery();
-            System.out.println(
-                    "\n+------------------------------------------------------------------------------------------------------------------------------------+");
-            System.out.printf("| %-10s %-10s %-10s %-15s %-50s %-20s %-9s |\n", "RefGameID", "Item ID", "Item Name",
-                    "Item Type", "Item Description", "Price Location", "Cost");
-            System.out.println(
-                    "+------------------------------------------------------------------------------------------------------------------------------------+");
-            while (resultSet.next()) {
-                System.out.printf("| %-10d %-10d %-10s %-15s %-50s %-20s %-7.2f  |\n",
-                        resultSet.getInt("RefGameID"),
-                        resultSet.getInt("ItemID"),
-                        resultSet.getString("ItemName"),
-                        resultSet.getString("ItemType"),
-                        resultSet.getString("ItemDescription"),
-                        resultSet.getString("PriceLocation"),
-                        resultSet.getFloat("Cost"));
-            }
-            System.out.println(
-                    "+------------------------------------------------------------------------------------------------------------------------------------+");
 
             resultSet.close();
             preparedStatement.close();

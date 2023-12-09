@@ -1,3 +1,8 @@
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.util.List;
+
 public class CLI {
 
 	public void printMainMenu() {
@@ -29,4 +34,72 @@ public class CLI {
 		System.out.println("+--------------------------------------+\n");
 		System.out.print("Please select an DB edit option from the list above (i.e. 2): ");
 	}
+
+	public void printTableHeader(ResultSetMetaData metaData, int[] columnWidths, List<String> columnsToPrint)
+			throws SQLException {
+		StringBuilder headerFormat = new StringBuilder("|");
+
+		printSeperators(columnWidths);
+
+		if (columnsToPrint != null && !columnsToPrint.isEmpty()) {
+			for (int i = 1; i <= columnWidths.length; i++) {
+				String columnName = metaData.getColumnName(i);
+				if (columnsToPrint.contains(columnName)) {
+					headerFormat.append(String.format(" %-" + (columnWidths[i - 1]) + "s |", columnName));
+				}
+			}
+		} else {
+			for (int i = 1; i <= columnWidths.length; i++) {
+				String columnName = metaData.getColumnName(i);
+				headerFormat.append(String.format(" %-" + (columnWidths[i - 1]) + "s |", columnName));
+			}
+			System.out.println(headerFormat.toString());
+		}
+		printSeperators(columnWidths);
+	}
+
+	public void printTableData(ResultSet resultSet, int columnCount, int[] columnWidths, List<String> columnsToPrint)
+			throws SQLException {
+		StringBuilder rowFormat = new StringBuilder("|");
+
+		for (int i = 1; i <= columnWidths.length; i++) {
+			rowFormat.append(" %-" + columnWidths[i - 1] + "s |");
+		}
+
+		while (resultSet.next()) {
+			Object[] rowData = new Object[columnCount];
+
+			if (columnsToPrint == null || columnsToPrint.isEmpty()) {
+				for (int i = 1; i <= columnCount; i++) {
+					rowData[i - 1] = resultSet.getString(i);
+				}
+				System.out.printf(rowFormat.toString(), rowData);
+			} else {
+				for (String columnName : columnsToPrint) {
+					for (int i = 1; i <= columnCount; i++) {
+						if (columnName.equals(resultSet.getMetaData().getColumnName(i))) {
+							rowData[i - 1] = resultSet.getString(i);
+						}
+					}
+				}
+				System.out.printf(rowFormat.toString(), rowData);
+			}
+
+			System.out.println();
+		}
+
+		printSeperators(columnWidths);
+		System.out.println();
+	}
+
+	public void printSeperators(int[] columnWidths) {
+		for (int i = 1; i <= columnWidths.length; i++) {
+			System.out.print("+");
+			for (int j = 0; j < columnWidths[i - 1] + 2; j++) {
+				System.out.print("-");
+			}
+		}
+		System.out.println("+");
+	}
+
 }

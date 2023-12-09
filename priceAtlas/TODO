@@ -1,0 +1,10 @@
+
+DBQueries.java:
+  ☐ refactor all query methods
+    ✔ getAllGames @done(23-12-08 17:20)
+    ✔ getAllGameItems @done(23-12-08 17:20)
+    ☐ itemStats
+    ☐ itemsUnderPrice
+    ☐ specificItemCostLoc
+    ☐ getGameCapital
+    ☐ 
