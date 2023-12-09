@@ -23,7 +23,7 @@ public class PriceAtlas {
 	public static void main(String[] args) throws SQLException, Exception {
 		Scanner scnr = new Scanner(System.in);
 		int errFlag = -1;
-		int userInput = 8;
+		int userInput = 0;
 		cmd = new DBQueries(scnr);
 		editMode = new DBEditMode(cmd.getConnection());
 		cli = new CLI();
@@ -49,6 +49,7 @@ public class PriceAtlas {
 				errFlag = 1;
 			} catch (Exception e) {
 				System.out.println("\nAn unexpected System error orrcured.");
+				e.printStackTrace();
 				cmd.closeConnection();
 				errFlag = 0;
 			} finally {

@@ -3,8 +3,10 @@ DBQueries.java:
   ☐ refactor all query methods
     ✔ getAllGames @done(23-12-08 17:20)
     ✔ getAllGameItems @done(23-12-08 17:20)
-    ☐ itemStats
-    ☐ itemsUnderPrice
-    ☐ specificItemCostLoc
-    ☐ getGameCapital
-    ☐ 
+    ✔ specificItemCostLoc @done(23-12-09 00:22)
+    ✔ itemStats @started(23-12-09 00:22) @done(23-12-09 00:27) @lasted(5m50s)
+    ✔ itemsUnderPrice @started(23-12-09 00:27) @done(23-12-09 00:34) @lasted(7m51s)
+    ✔ Unwork the added parameter or PrintTableHeader & PrintTableData @started(23-12-09 00:31) @done(23-12-09 00:34) @lasted(3m55s)
+    ✔ getGameCapital @started(23-12-09 00:34) @done(23-12-09 00:41) @lasted(7m39s)
+    ✔ optimize DBQueries code @started(23-12-09 00:36) @done(23-12-09 00:46) @lasted(10m45s)
+    ✔ Alter DBEditCLi and DBQueryCLI @started(23-12-09 00:47) @done(23-12-09 02:23) @lasted(1h36m53s)
