@@ -5,7 +5,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Scanner;
 import java.sql.ResultSet;
-import java.io.*;
+import java.sql.ResultSetMetaData;
 
 /**
  * The DBQueries class is a Java class that handles various database queries and
@@ -17,6 +17,7 @@ import java.io.*;
  */
 public class DBQueries {
     private Connection connection;
+    private CLI cli;
 
     // The above code is a constructor for a class called DBQueries. It takes a
     // Scanner object as a
@@ -45,6 +46,7 @@ public class DBQueries {
         } while (true);
 
         System.out.println("\nConnection to Database Successful!");
+        cli = new CLI();
     }
 
     /**
@@ -70,30 +72,16 @@ public class DBQueries {
     }
 
     /**
-     * The function getAllGames retrieves all game records from a database and
-     * prints them in a
-     * formatted table.
+     * The function retrieves all games from a database and processes the data for
+     * display.
      */
     public void getAllGames() throws SQLException {
         try {
-            String txtFmt = "%-10s %-20s %-20s %-20s\n";
-            Statement statement = connection.createStatement();
+            Statement statement = connection.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE,
+                    ResultSet.CONCUR_READ_ONLY);
             ResultSet resultSet = statement.executeQuery("SELECT * FROM game");
-            System.out
-                    .println("+--------------------------------------------------------------------------+");
-            System.out.printf(txtFmt, "Game ID", "Title", "Release Date", "Developer");
-            System.out
-                    .println("+--------------------------------------------------------------------------+");
 
-            while (resultSet.next()) {
-                System.out.printf(txtFmt,
-                        resultSet.getInt("GameID"),
-                        resultSet.getString("Title"),
-                        resultSet.getString("ReleaseDate"),
-                        resultSet.getString("Developer"));
-            }
-            System.out
-                    .println("+--------------------------------------------------------------------------+\n");
+            processDataForDisplay(resultSet);
 
             resultSet.close();
         } catch (Exception e) {
@@ -104,37 +92,60 @@ public class DBQueries {
     /**
      * The function retrieves all game items associated with a specific game ID from
      * a database and
-     * prints them in a formatted table.
+     * processes the data for display.
      * 
      * @param gameId The `gameId` parameter is an integer that represents the ID of
      *               the game for which
-     *               you want to retrieve all the game items.
+     *               we want to retrieve all the game items.
      */
     public void getAllGameItems(int gameId) {
         try {
-            String query = "SELECT * FROM ITEM WHERE ITEM.RefGameID = ?";
-            PreparedStatement preparedStatement = connection.prepareStatement(query);
+            String query = "SELECT ITEM.ItemID, ITEM.ItemName FROM ITEM WHERE ITEM.RefGameID = ?";
+            PreparedStatement preparedStatement = connection.prepareStatement(query, ResultSet.TYPE_SCROLL_SENSITIVE,
+                    ResultSet.CONCUR_READ_ONLY);
             preparedStatement.setInt(1, gameId);
 
             ResultSet resultSet = preparedStatement.executeQuery();
+            processDataForDisplay(resultSet);
 
-            System.out.println(
-                    "\n+--------------------------------------------+");
-            System.out.printf("| %-10s %-31s |\n", "Item ID", "Item Name");
-            System.out.println(
-                    "+--------------------------------------------+");
-
-            while (resultSet.next()) {
-                System.out.printf("|  %-10d %-30s |\n",
-                        resultSet.getInt("ItemID"),
-                        resultSet.getString("ItemName"));
-            }
-
-            System.out.println(
-                    "+--------------------------------------------+");
-
-            resultSet.close();
             preparedStatement.close();
+            resultSet.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * The specificItemCostLoc function retrieves the cost and location information
+     * for a specific item
+     * in a game.
+     * 
+     * @param itemID The itemID parameter is an integer that represents the ID of
+     *               the specific item you
+     *               want to retrieve information for.
+     * @param gameID The gameID parameter is an integer that represents the ID of a
+     *               game. It is used in
+     *               the SQL query to filter the results based on the game ID.
+     */
+    public void specificItemCostLoc(int itemID, int gameID) {
+        try {
+            String query = "SELECT ITEM.ItemID, ITEM.ItemName, PRICE.PriceLocation, PRICE.Cost, PRICE.CurrencyType, PRICE.Stock "
+                    +
+                    "FROM ITEM " +
+                    "LEFT JOIN STATCONTAINER ON STATCONTAINER.RefItemID = ITEM.ItemID " +
+                    "LEFT JOIN PRICE ON PRICE.PriceContainerID = STATCONTAINER.ContainerID " +
+                    "WHERE ITEM.ItemID = ? AND ITEM.RefGameID = ?";
+
+            PreparedStatement preparedStatement = connection.prepareStatement(query, ResultSet.TYPE_SCROLL_SENSITIVE,
+                    ResultSet.CONCUR_READ_ONLY);
+            preparedStatement.setInt(1, itemID);
+            preparedStatement.setInt(2, gameID);
+
+            ResultSet resultSet = preparedStatement.executeQuery();
+            processDataForDisplay(resultSet);
+
+            preparedStatement.close();
+            resultSet.close();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -147,162 +158,84 @@ public class DBQueries {
      * @param itemID     The itemID parameter is used to specify the ID of the item
      *                   for which you want to
      *                   retrieve the statistics.
-     * @param gameID     The gameID parameter is used to specify the reference game
-     *                   ID for the items you
-     *                   want to retrieve stats for.
-     * @param instanceID The instanceID parameter is used to specify the ID of the
-     *                   stat container
-     *                   instance. It is used in the SQL query to filter the results
-     *                   and retrieve the stats associated
-     *                   with a specific instance of an item.
+     * @param gameID     The gameID parameter is used to specify the ID of the game
+     *                   for which the item
+     *                   stats are being retrieved.
+     * @param instanceID The instanceID parameter is used to specify the unique
+     *                   identifier of a
+     *                   specific instance of the game. It is used in the SQL query
+     *                   to filter the results and retrieve
+     *                   the item statistics for that particular instance.
      */
+
     public void itemStats(int itemID, int gameID, int instanceID) {
         try {
-            String query = "SELECT DISTINCT * " +
+            String query = "SELECT DISTINCT ITEM.ItemID, ITEM.ItemName, ITEM.ItemType, ITEM.ItemDescription, STATS.StatName, STATS.StatValue "
+                    +
                     "FROM ITEM, STATCONTAINER, STATS " +
                     "WHERE ITEM.ItemID = ? AND ITEM.RefGameID = ? AND STATS.RefContainerID = ? AND STATCONTAINER.RefItemID = ITEM.ItemID";
-            PreparedStatement preparedStatement = connection.prepareStatement(query);
+            PreparedStatement preparedStatement = connection.prepareStatement(query, ResultSet.TYPE_SCROLL_SENSITIVE,
+                    ResultSet.CONCUR_READ_ONLY);
             preparedStatement.setInt(1, itemID);
             preparedStatement.setInt(2, gameID);
             preparedStatement.setInt(3, instanceID);
 
             ResultSet resultSet = preparedStatement.executeQuery();
+            processDataForDisplay(resultSet);
 
-            System.out.println(
-                    "\n+----------------------------------------------------------------------------------------------------------------+");
-
-            System.out.printf("| %-10s %-10s %-10s %-10s %-40s %-14s %s |\n", "RefGameID", "Item ID", "Item Name",
-                    "Item Type", "Item Description", "Stat Name", "Stat Value");
-            System.out.println(
-                    "+----------------------------------------------------------------------------------------------------------------+");
-
-            while (resultSet.next()) {
-                System.out.printf("| %-10d %-10d %-10s %-10s %-40s %-19s %.3f |\n",
-                        resultSet.getInt("RefGameID"),
-                        resultSet.getInt("ItemID"),
-                        resultSet.getString("ItemName"),
-                        resultSet.getString("ItemType"),
-                        resultSet.getString("ItemDescription"),
-                        resultSet.getString("StatName"),
-                        resultSet.getFloat("StatValue"));
-            }
-            System.out.println(
-                    "+----------------------------------------------------------------------------------------------------------------+");
-
-            resultSet.close();
             preparedStatement.close();
+            resultSet.close();
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
     /**
-     * The function retrieves items under a certain price for a given game ID from a
+     * The function retrieves items under a certain price for a specific game from a
      * database and
-     * prints the results.
+     * processes the data for display.
      * 
      * @param gameID   The gameID parameter is an integer that represents the ID of
-     *                 the game for which
-     *                 you want to find items under a certain price.
+     *                 a game. It is used to
+     *                 filter the items based on the game they belong to.
      * @param maxPrice The maximum price that you want to filter the items by.
      */
+
     public void itemsUnderPrice(int gameID, float maxPrice) {
         try {
-            String query = "SELECT PRICE.PriceLocation, ITEM.ItemName, PRICE.Stock, PRICE.Cost, PRICE.CurrencyType " +
+            String query = "SELECT PRICE.PriceLocation, PRICE.Stock, ITEM.ItemID, ITEM.ItemName, PRICE.Cost, PRICE.CurrencyType "
+                    +
                     "FROM ITEM, STATCONTAINER, PRICE " +
                     "WHERE PRICE.PriceContainerID = STATCONTAINER.ContainerID " +
                     "AND STATCONTAINER.RefItemID = ITEM.ItemID " +
                     "AND PRICE.Cost < ?" +
                     "AND ITEM.RefGameID = ?";
-            PreparedStatement preparedStatement = connection.prepareStatement(query);
+            PreparedStatement preparedStatement = connection.prepareStatement(query, ResultSet.TYPE_SCROLL_SENSITIVE,
+                    ResultSet.CONCUR_READ_ONLY);
             preparedStatement.setFloat(1, maxPrice);
             preparedStatement.setInt(2, gameID);
 
             ResultSet resultSet = preparedStatement.executeQuery();
+            processDataForDisplay(resultSet);
 
-            System.out.println(
-                    "+-----------------------------------------------------------------------------------------------------------------------+");
-            System.out.printf("| %-20s %-40s %-20s %-20s %-5s |\n", "Price Location", "Item Name", "Stock", "Cost",
-                    "Currency Type");
-            System.out.println(
-                    "+-----------------------------------------------------------------------------------------------------------------------+");
-
-            while (resultSet.next()) {
-                System.out.printf("| %-20s %-40s %-20d %-20.2f %-13s |\n",
-                        resultSet.getString("PriceLocation"),
-                        resultSet.getString("ItemName"),
-                        resultSet.getInt("Stock"),
-                        resultSet.getFloat("Cost"),
-                        resultSet.getString("CurrencyType"));
-            }
-            System.out.println(
-                    "+-----------------------------------------------------------------------------------------------------------------------+");
-
-            resultSet.close();
             preparedStatement.close();
+            resultSet.close();
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
     /**
-     * The specificItemCostLoc function retrieves and displays the cost and location
-     * information for a
-     * specific item in a game.
-     * 
-     * @param itemID The itemID parameter is used to specify the ID of the item you
-     *               want to retrieve
-     *               the cost for.
-     * @param gameID The gameID parameter is used to specify the ID of the game for
-     *               which you want to
-     *               retrieve the specific item cost and location.
-     */
-    public void specificItemCostLoc(int itemID, int gameID) {
-        try {
-            String query = "SELECT * " +
-                    "FROM ITEM " +
-                    "LEFT JOIN STATCONTAINER ON STATCONTAINER.RefItemID = ITEM.ItemID " +
-                    "LEFT JOIN PRICE ON PRICE.PriceContainerID = STATCONTAINER.ContainerID " +
-                    "WHERE ITEM.ItemID = ? AND ITEM.RefGameID = ?";
-            PreparedStatement preparedStatement = connection.prepareStatement(query);
-            preparedStatement.setInt(1, itemID);
-            preparedStatement.setInt(2, gameID);
-
-            ResultSet resultSet = preparedStatement.executeQuery();
-            System.out.println(
-                    "\n+------------------------------------------------------------------------------------------------------------------------------------+");
-            System.out.printf("| %-10s %-10s %-10s %-15s %-50s %-20s %-9s |\n", "RefGameID", "Item ID", "Item Name",
-                    "Item Type", "Item Description", "Price Location", "Cost");
-            System.out.println(
-                    "+------------------------------------------------------------------------------------------------------------------------------------+");
-            while (resultSet.next()) {
-                System.out.printf("| %-10d %-10d %-10s %-15s %-50s %-20s %-7.2f  |\n",
-                        resultSet.getInt("RefGameID"),
-                        resultSet.getInt("ItemID"),
-                        resultSet.getString("ItemName"),
-                        resultSet.getString("ItemType"),
-                        resultSet.getString("ItemDescription"),
-                        resultSet.getString("PriceLocation"),
-                        resultSet.getFloat("Cost"));
-            }
-            System.out.println(
-                    "+------------------------------------------------------------------------------------------------------------------------------------+");
-
-            resultSet.close();
-            preparedStatement.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    /**
-     * The function retrieves the market capital and currency type for a given game
-     * ID by querying the
-     * database.
+     * The function retrieves the total cost and currency type of items associated
+     * with a specific game
+     * ID.
      * 
      * @param gameID The gameID parameter is an integer that represents the ID of a
-     *               game.
+     *               game. It is used in
+     *               the SQL query to retrieve the total cost and currency type of
+     *               items related to that game.
      */
+
     public void getGameCapital(int gameID) {
         try {
             String query = "SELECT SUM(PRICE.Cost * PRICE.Stock) AS TotalCost, PRICE.CurrencyType " +
@@ -311,25 +244,40 @@ public class DBQueries {
                     "AND STATCONTAINER.RefItemID = ITEM.ItemID " +
                     "AND PRICE.PriceContainerID = STATCONTAINER.ContainerID " +
                     "GROUP BY PRICE.CurrencyType;";
-            try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
-                preparedStatement.setInt(1, gameID);
+            PreparedStatement preparedStatement = connection.prepareStatement(query, ResultSet.TYPE_SCROLL_SENSITIVE,
+                    ResultSet.CONCUR_READ_ONLY);
+            preparedStatement.setInt(1, gameID);
+            ResultSet resultSet = preparedStatement.executeQuery();
+            processDataForDisplay(resultSet);
 
-                try (ResultSet resultSet = preparedStatement.executeQuery()) {
-                    System.out.println("\n+--------------------------+");
-                    System.out.printf("| %-15s %s |\n", "Market Capital", "Currency");
-                    System.out.println("+--------------------------+");
-
-                    while (resultSet.next()) {
-                        float totalCost = resultSet.getFloat("TotalCost");
-                        String currency = resultSet.getString("CurrencyType");
-
-                        System.out.printf("| %-15.2f %-8s |\n", totalCost, currency);
-                    }
-                    System.out.println("+--------------------------+");
-                }
-            }
+            preparedStatement.close();
+            resultSet.close();
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
+
+    private void processDataForDisplay(ResultSet rSet) throws SQLException {
+        ResultSetMetaData metaData = rSet.getMetaData();
+        int columnCount = metaData.getColumnCount();
+        int[] columnWidths = new int[columnCount];
+
+        for (int i = 1; i <= columnCount; i++) {
+            columnWidths[i - 1] = metaData.getColumnName(i).length();
+        }
+
+        while (rSet.next()) {
+            for (int i = 1; i <= columnCount; i++) {
+                int dataLength = rSet.getString(i).length();
+                if (dataLength > columnWidths[i - 1]) {
+                    columnWidths[i - 1] = dataLength;
+                }
+            }
+        }
+
+        cli.printTableHeader(metaData, columnWidths);
+        rSet.beforeFirst();
+        cli.printTableData(rSet, columnCount, columnWidths);
+    }
+
 }
