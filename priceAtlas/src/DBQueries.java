@@ -39,6 +39,7 @@ public class DBQueries {
                 connection = DriverManager.getConnection(URL, USER, PASSWORD);
             } catch (Exception e) {
                 System.out.println("\nConnection unsuccessful, please retry the connection.\n");
+                e.printStackTrace();
             } finally {
                 if (connection != null)
                     break;
@@ -79,7 +80,7 @@ public class DBQueries {
         try {
             Statement statement = connection.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE,
                     ResultSet.CONCUR_READ_ONLY);
-            ResultSet resultSet = statement.executeQuery("SELECT * FROM game");
+            ResultSet resultSet = statement.executeQuery("SELECT * FROM GAME");
 
             processDataForDisplay(resultSet);
 
