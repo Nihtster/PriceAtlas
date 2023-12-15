@@ -20,6 +20,7 @@ mysql -u [username] -p
 
 <img src = "images/mysql_login.png">
 
+<br>
 Copy the creation scripts from [MySQL creation script files](https://github.com/Nihtster/PriceAtlas/blob/main/priceAtlas/src/MySQL_Creation_Script.txt)
 into the terminal. The blank database is now available to be used for the rest of the program.
 
@@ -39,7 +40,7 @@ into the terminal. The blank database is now available to be used for the rest o
   cd priceAtlas
 ```
 
-#### compile the java code
+#### Compile the java code
 
 Windows:
 
@@ -73,7 +74,7 @@ Run the java program
 java -cp .:my-sql-connector-j-x.x.x.jar PriceAtlas
 ```
 
-replace the 'x' with the appropriate version numbers.
+Replace the 'x' with the appropriate version numbers.
 
 ## Using the application
 
@@ -99,6 +100,23 @@ To insert data, enter prompt value 7 to switch to database edit mode
 |                                                                       Author                                                                       |                                                                    Collaborator                                                                     |                                                                         Collaborator                                                                         |                                                                        Collaborator                                                                        |
 | :------------------------------------------------------------------------------------------------------------------------------------------------: | :-------------------------------------------------------------------------------------------------------------------------------------------------: | :----------------------------------------------------------------------------------------------------------------------------------------------------------: | :--------------------------------------------------------------------------------------------------------------------------------------------------------: |
 | [<img src="https://avatars.githubusercontent.com/u/77190903?v=4size=115" width=115><br><sub>@Nihtster</sub>](https://github.com/Nihtster) <br><br> | [<img src="https://avatars.githubusercontent.com/u/42759927?size=255" width=115><br><sub>@Nathmon565</sub>](https://github.com/Nathmon565) <br><br> | [<img src="https://avatars.githubusercontent.com/u/142537220?v=4size=255" width=115><br><sub>@Tristan Breen</sub>](https://github.com/TristanBreen) <br><br> | [<img src="https://avatars.githubusercontent.com/u/38901938?v=4?size=255" width=115><br><sub>@Xander Treat</sub>](https://github.com/MisterX2003) <br><br> |
+
+## Roadmap
+
+- [x] Working Database Structure
+- [x] Working Command Line Interface (CLI)
+- [ ] Working Graphical User Interface (GUI)
+  - [ ] Swing?
+  - [ ] JavaFX?
+  - [ ] Web Browser?
+
+#### Quality of life
+
+- [x] Refactor the java code structure
+- [ ] Alter the Database Structure
+- [ ] Refactor system for ease of Installation
+  - [ ] Create executable jar
+- [ ] implement a password hiding feature
 
 ## Contributing
 
