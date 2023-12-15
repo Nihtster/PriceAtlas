@@ -1,21 +1,3 @@
-# VS Code Readme Editor 📝
-
-Import your existing Readme using the import button at the bottom,
-or create a new Readme from scratch by typing in the editor.
-
-## Get Started 🚀
-
-To get started, hit the 'clear' button at the top of the editor!
-
-## Prebuilt Components/Templates 🔥
-
-You can checkout prebuilt components and templates by clicking on the 'Add Section' button or menu icon
-on the top left corner of the navbar.
-
-## Save Readme ✨
-
-Once you're done, click on the save button to download and save your ReadMe!
-
 # PriceAtlas
 
 A CLI application built for tracking the prices
@@ -33,45 +15,62 @@ please follow the official instructions for setting up MySQL on your system [her
 Launch the MySQL command line client and login
 
 ```bash
-mysql -u [username] -p [hit enter to be prompted for password entry]
+mysql -u [username] -p
 ```
 
-Copy the creation scripts from
+<img src = "images/mysql_login.png">
 
-Copy the date insertion scripts at the bottom of this document into the command line after the creation scripts have completed.
+Copy the creation scripts from [MySQL creation script files](https://github.com/Nihtster/PriceAtlas/blob/main/priceAtlas/src/MySQL_Creation_Script.txt)
+into the terminal. The blank database is now available to be used for the rest of the program.
+
+<img src = "images/db_creation.png">
 
 ## Run Locally
 
-Clone the project
+#### Clone the project
 
 ```bash
   git clone https://github.com/Nihtster/PriceAtlas
 ```
 
-Go to the project directory
+#### Go to the project directory
 
 ```bash
-  cd PriceAtlas
+  cd priceAtlas
 ```
 
-compile the java code
+#### compile the java code
+
+Windows:
 
 ```bash
-javac PriceAtlas.java
+javac -d classes src/PriceAtlas.java
 ```
 
-Start the application
-
-If you installed the connector elsewhere, run this line:
+Linux:
 
 ```bash
-java -cp .;path/to/my-sql-connector-j-x.x.x.jar PriceAtlas
+javac -d classes src/*.java
 ```
 
-If you are using the connector in the repository, run this line:
+#### Start the application
+
+Copy over the the connector jar file from the 'lib' folder into classes
 
 ```bash
-java -cp .;lib/my-sql-connector-j-x.x.x.jar PriceAtlas
+cp lib/mysql-connector-j-8.2.0.jar classes
+```
+
+Enter the "classes" folder directory
+
+```bash
+cd classes
+```
+
+Run the java program
+
+```bash
+java -cp .:my-sql-connector-j-x.x.x.jar PriceAtlas
 ```
 
 replace the 'x' with the appropriate version numbers.
@@ -85,17 +84,31 @@ The application will prompt you for your:
 - password (i.e. MyPassword1234)
 - JDBC driver package (i.e. com.mysql.cj.jdbc.Driver)
 
+<br>
+From here, you can select the prompt values for the queries you wish to perform on the database.
+
+<img src = "images/main_menu.png">
+
+<br>
+To insert data, enter prompt value 7 to switch to database edit mode
+
+<img src = "images/editDB_menu.png">
+
 ## Creators
 
-|                                                                       Author                                                                       |                                                                    Collaborator                                                                     |                                                                         Collaborator                                                                         |                                                                                                                                               Collaborator |
-| :------------------------------------------------------------------------------------------------------------------------------------------------: | :-------------------------------------------------------------------------------------------------------------------------------------------------: | :----------------------------------------------------------------------------------------------------------------------------------------------------------: | ---------------------------------------------------------------------------------------------------------------------------------------------------------: |
+|                                                                       Author                                                                       |                                                                    Collaborator                                                                     |                                                                         Collaborator                                                                         |                                                                        Collaborator                                                                        |
+| :------------------------------------------------------------------------------------------------------------------------------------------------: | :-------------------------------------------------------------------------------------------------------------------------------------------------: | :----------------------------------------------------------------------------------------------------------------------------------------------------------: | :--------------------------------------------------------------------------------------------------------------------------------------------------------: |
 | [<img src="https://avatars.githubusercontent.com/u/77190903?v=4size=115" width=115><br><sub>@Nihtster</sub>](https://github.com/Nihtster) <br><br> | [<img src="https://avatars.githubusercontent.com/u/42759927?size=255" width=115><br><sub>@Nathmon565</sub>](https://github.com/Nathmon565) <br><br> | [<img src="https://avatars.githubusercontent.com/u/142537220?v=4size=255" width=115><br><sub>@Tristan Breen</sub>](https://github.com/TristanBreen) <br><br> | [<img src="https://avatars.githubusercontent.com/u/38901938?v=4?size=255" width=115><br><sub>@Xander Treat</sub>](https://github.com/MisterX2003) <br><br> |
 
 ## Contributing
 
-Contributions are always welcome!
+If you have a suggestion that would make this better, please fork the repo and create a pull request. You can also simply open an issue with the tag "enhancement". Don't forget to give the project a star! Thanks again!
 
-See `contributing.md` for ways to get started.
+1. Fork the Project
+2. Create your Feature Branch (git checkout -b feature/AmazingFeature)
+3. Commit your Changes (git commit -m 'Add some AmazingFeature')
+4. Push to the Branch (git push origin feature/AmazingFeature)
+5. Open a Pull Request
 
 Please adhere to this project's `code of conduct`.
 
